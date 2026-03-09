@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Food Nutrition AI Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    margin: 0;
+    background: linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%);
+    font-family: "Poppins", sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    width: 250px;
+    height: 100vh;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding-top: 30px;
+    backdrop-filter: blur(8px);
+}
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.sidebar a {
+    display: block;
+    padding: 15px 30px;
+    color: white;
+    font-size: 17px;
+    text-decoration: none;
+}
+.sidebar a:hover {
+    background: rgba(255,255,255,0.15);
+    border-left: 4px solid #4dabf7;
+}
+
+/* Main */
+.main {
+    margin-left: 270px;
+    padding: 30px;
+}
+
+.card {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 18px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.1);
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* CENTERED UPLOAD CARD */
+#upload {
+    width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+/* Preview image */
+#previewImg {
+    width: 260px;
+    border-radius: 15px;
+}
+
+/* Charts Grid */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 25px;
+    margin-top: 20px;
+}
+
+.chart-box {
+    background: rgba(255,255,255,0.65);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+}
+
+.chart-box h3 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+</style>
+
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>Dashboard</h2>
+    <a href="#upload">Upload Image</a>
+    <a href="#results">Prediction Info</a>
+    <a href="#charts">Nutrient Charts</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+    <!-- Upload Food Image -->
+    <div id="upload" class="card">
+        <div class="title">Upload Food Image</div>
+
+        <button id="btnUpload" style="padding:12px 25px; border:none; background:#4dabf7;
+        border-radius: 30px; color:white; cursor:pointer;">
+            Choose Image
+        </button>
+
+        <input type="file" id="fileInput" hidden>
+        <br><br>
+        <img id="previewImg" style="display:none;">
+
+        <br><br>
+        <button id="btnPredict" style="padding:12px 25px; border:none; background:#51cf66;
+        border-radius: 30px; color:white; cursor:pointer;">
+            Predict
+        </button>
+    </div>
+
+    <!-- Prediction Results -->
+    <div id="results" class="card" style="display:none;">
+        <div class="title">Prediction Details</div>
+
+        <p><b>Food Name:</b> <span id="food"></span></p>
+        <p><b>Calories:</b> <span id="calories"></span></p>
+        <p><b>Carbohydrates:</b> <span id="carbs"></span> g</p>
+        <p><b>Protein:</b> <span id="protein"></span> g</p>
+        <p><b>Fat:</b> <span id="fat"></span> g</p>
+
+        <hr>
+
+        <p><b>Details:</b> <span id="details"></span></p>
+        <p><b>Best For:</b> <span id="consume"></span></p>
+        <p><b>Not Suitable For:</b> <span id="not_consume"></span></p>
+        <p><b>Fat Related Advice:</b> <span id="fat_consumption"></span></p>
+        <p><b>Diabetes Advice:</b> <span id="diabetes"></span></p>
+        <p><b>Cholesterol Advice:</b> <span id="cholesterol"></span></p>
+    </div>
+
+    <!-- Charts -->
+    <div id="charts" class="chart-grid" style="display:none;">
+
+        <div class="chart-box">
+            <h3>Donut Chart</h3>
+            <canvas id="donutChart"></canvas>
+        </div>
+
+        <div class="chart-box">
+            <h3>Bar Chart</h3>
+            <canvas id="barChart"></canvas>
+        </div>
+
+        <div class="chart-box">
+            <h3>Radar Chart</h3>
+            <canvas id="radarChart"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- JS Logic -->
+<script>
+let base64Image = null;
+
+$("#btnUpload").click(()=> $("#fileInput").click());
+
+$("#fileInput").change(function(){
+    const reader = new FileReader();
+    reader.onload = e => {
+        base64Image = e.target.result.split(",")[1];
+        $("#previewImg").attr("src", e.target.result).show();
+    };
+    reader.readAsDataURL(this.files[0]);
+});
+
+$("#btnPredict").click(()=>{
+
+    $.ajax({
+        url: "/predict",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ image: base64Image }),
+
+        success: function(res){
+
+            const data = JSON.parse(res);
+
+            $("#food").text(data.food);
+            $("#calories").text(data.calories);
+            $("#carbs").text(data.carbs);
+            $("#protein").text(data.protein);
+            $("#fat").text(data.fat);
+            $("#details").text(data.details);
+            $("#consume").text(data.consume);
+            $("#not_consume").text(data.not_consume);
+            $("#fat_consumption").text(data.fat_consumption);
+            $("#diabetes").text(data.diabetes);
+            $("#cholesterol").text(data.cholesterol);
+
+            $("#results").fadeIn();
+            $("#charts").fadeIn();
+
+            drawCharts(data.carbs, data.protein, data.fat);
+        }
+    });
+});
+
+let donutChart, barChart, radarChart;
+
+function drawCharts(carbs, protein, fat){
+
+    carbs = Number(carbs);
+    protein = Number(protein);
+    fat = Number(fat);
+
+    /* DONUT CHART */
+    if(donutChart) donutChart.destroy();
+    donutChart = new Chart(document.getElementById("donutChart"), {
+        type: "doughnut",
+        data: {
+            labels: ["Carbs", "Protein", "Fat"],
+            datasets: [{
+                data: [carbs, protein, fat],
+                backgroundColor: ["#4dabf7", "#69db7c", "#ffa94d"]
+            }]
+        }
+    });
+
+    /* BAR CHART */
+    if(barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+            labels: ["Carbs", "Protein", "Fat"],
+            datasets: [{
+                label: "Grams",
+                data: [carbs, protein, fat],
+                backgroundColor: ["#4dabf7", "#69db7c", "#ffa94d"],
+                borderRadius: 8
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    /* RADAR CHART */
+    if(radarChart) radarChart.destroy();
+    radarChart = new Chart(document.getElementById("radarChart"), {
+        type: "radar",
+        data: {
+            labels: ["Carbs", "Protein", "Fat"],
+            datasets: [{
+                label: "Nutrition Radar",
+                data: [carbs, protein, fat],
+                backgroundColor: "rgba(74, 139, 247, 0.4)",
+                borderColor: "#1e3c72",
+                borderWidth: 2
+            }]
+        }
+    });
+}
+</script>
+
+</body>
+</html>
