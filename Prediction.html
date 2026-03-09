@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Food Calorie Estimation Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    font-family: "Poppins", sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: linear-gradient(180deg, #1e3c72, #2a5298);
+    color: white;
+    position: fixed;
+    padding-top: 30px;
+}
+.sidebar h2 {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 40px;
+}
+.sidebar a {
+    display: block;
+    color: white;
+    padding: 15px 25px;
+    text-decoration: none;
+    font-size: 16px;
+}
+.sidebar a:hover {
+    background: rgba(255,255,255,0.15);
+    border-radius: 5px;
+}
+
+/* Main Layout */
+.main {
+    margin-left: 270px;
+    padding: 30px;
+}
+
+.card-section {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.table-info {
+    width: 100%;
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+.chart-row {
+    display: flex;
+    gap: 25px;
+    margin-top: 30px;
+}
+
+.chart-box {
+    flex: 1;
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+}
+.chart-box h3 {
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>🍽 Dashboard</h2>
+    <a href="#upload">Upload Image</a>
+    <a href="#results">Prediction</a>
+    <a href="#charts">Nutrient Charts</a>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+    <!-- Prediction Output -->
+    <div id="results" class="card-section">
+        <h2>Food Prediction Result</h2>
+        <table class="table-info">
+            <tr><th>Food Item:</th><td>{{ food }}</td></tr>
+            <tr><th>Calories:</th><td>{{ calories }}</td></tr>
+            <tr><th>Carbohydrates (g):</th><td>{{ carbs }}</td></tr>
+            <tr><th>Protein (g):</th><td>{{ protein }}</td></tr>
+            <tr><th>Fat (g):</th><td>{{ fat }}</td></tr>
+        </table>
+    </div>
+
+    <!-- Charts Section -->
+    <div id="charts" class="chart-row">
+
+        <!-- Bar Chart -->
+        <div class="chart-box">
+            <h3>Macronutrient Bar Chart</h3>
+            <canvas id="macroBarChart"></canvas>
+        </div>
+
+        <!-- Donut Chart -->
+        <div class="chart-box">
+            <h3>Nutrient Distribution Donut Chart</h3>
+            <canvas id="nutrientDonutChart"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ---------------- JavaScript for Charts ---------------- -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // Get values dynamically from Flask
+    const carbs = Number("{{ carbs }}");
+    const protein = Number("{{ protein }}");
+    const fat = Number("{{ fat }}");
+
+    /* ------------------- BAR CHART ------------------- */
+    const bar = document.getElementById("macroBarChart");
+    new Chart(bar, {
+        type: "bar",
+        data: {
+            labels: ["Carbs", "Protein", "Fat"],
+            datasets: [{
+                label: "grams",
+                data: [carbs, protein, fat],
+                backgroundColor: ["#4dabf7", "#69db7c", "#ffa94d"],
+                borderRadius: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 1500 },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    /* ------------------- DONUT CHART ------------------- */
+    const donut = document.getElementById("nutrientDonutChart");
+    new Chart(donut, {
+        type: "doughnut",
+        data: {
+            labels: ["Carbs", "Protein", "Fat"],
+            datasets: [{
+                data: [carbs, protein, fat],
+                backgroundColor: ["#4dabf7", "#69db7c", "#ffa94d"],
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: "55%",
+            animation: { duration: 1500 }
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>
